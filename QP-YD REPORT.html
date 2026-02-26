@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project QP-YD | Master Lab Journal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;500;700&family=JetBrains+Mono:wght@400;700&display=swap');
+        body { font-family: 'Space Grotesk', sans-serif; background: #020617; color: #e2e8f0; scroll-behavior: smooth; }
+        .mono { font-family: 'JetBrains Mono', monospace; }
+        .glass-panel { background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(16px); border: 1px solid rgba(51, 65, 85, 0.5); }
+        .data-input { background: transparent; width: 100%; text-align: center; padding: 6px 0; outline: none; border-bottom: 1px solid transparent; transition: 0.2s; font-size: 13px; color: white; }
+        .data-input:focus { border-bottom-color: #3b82f6; color: #60a5fa; }
+        .flip-card { perspective: 1000px; height: 180px; cursor: pointer; }
+        .flip-card-inner { position: relative; width: 100%; height: 100%; text-align: center; transition: transform 0.6s; transform-style: preserve-3d; }
+        .flip-card.flipped .flip-card-inner { transform: rotateY(180deg); }
+        .flip-card-front, .flip-card-back { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 1.5rem; border-radius: 1.5rem; }
+        .flip-card-back { background: #1e40af; transform: rotateY(180deg); }
+
+        @media print {
+            @page { size: A4; margin: 1cm; }
+            body { background: white !important; color: black !important; padding: 0 !important; }
+            .glass-panel { 
+                background: white !important; 
+                border: 1px solid #000 !important; 
+                color: black !important; 
+                box-shadow: none !important;
+                backdrop-filter: none !important;
+                margin-bottom: 20px !important;
+            }
+            .print-row { display: flex !important; flex-direction: row !important; gap: 10px !important; }
+            .lg\:col-span-5, .lg\:col-span-7 { width: 50% !important; float: left !important; }
+            .data-input { color: black !important; border-bottom: 1px solid #000 !important; }
+            .print\:hidden, button, .flip-card { display: none !important; }
+            canvas { max-width: 100% !important; height: 300px !important; display: block !important; }
+            .text-blue-400, .text-purple-400, .text-emerald-400, .text-blue-300, .text-purple-300 { color: black !important; font-weight: bold !important; }
+            h1, h2 { color: black !important; margin-top: 10px !important; }
+            section { page-break-inside: avoid; clear: both; }
+        }
+    </style>
+</head>
+<body class="p-4 md:p-12 pb-32">
+
+    <header class="max-w-7xl mx-auto mb-16 flex flex-col md:flex-row justify-between items-end gap-6">
+        <div>
+            <span class="mono text-blue-500 font-bold uppercase text-xs tracking-[0.3em] print:hidden">// MRSM_GERIK_QUANTUM_UNIT</span>
+            <h1 class="text-6xl font-black tracking-tighter mt-2">Project <span class="text-blue-500">QP-YD</span></h1>
+            <p class="text-slate-400 mt-2">Integrated Experimental Quantum Suite.</p>
+        </div>
+        <div class="flex gap-4 print:hidden">
+            <button onclick="window.print()" class="px-6 py-2 bg-blue-600 rounded-lg text-xs mono font-bold hover:bg-blue-500 transition shadow-lg shadow-blue-500/20">EXPORT_REPORT_PDF</button>
+        </div>
+    </header>
+
+    <section class="max-w-7xl mx-auto mb-24 print-row">
+        <div class="lg:col-span-5 space-y-6">
+            <h2 class="text-2xl font-bold mono text-blue-400">01_WORK_FUNCTION</h2>
+            <div class="glass-panel p-6 rounded-3xl border-l-4 border-l-blue-500">
+                <table class="w-full text-[11px] mono text-center">
+                    <thead>
+                        <tr class="text-slate-500 border-b border-slate-800">
+                            <th>Vin (V)</th><th>V1 (mV)</th><th>V2 (mV)</th><th>V3 (mV)</th><th class="text-blue-400">AVG (V)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="body-exp1"></tbody>
+                </table>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div class="glass-panel p-5 rounded-2xl bg-blue-500/5">
+                    <span class="block text-[10px] mono text-slate-500 uppercase">f₀ (10¹⁴ Hz)</span>
+                    <div id="f0-val" class="text-xl font-bold text-blue-300">---</div>
+                </div>
+                <div class="glass-panel p-5 rounded-2xl bg-blue-500/5">
+                    <span class="block text-[10px] mono text-slate-500 uppercase">Work Function (eV)</span>
+                    <div id="phi-val" class="text-xl font-bold text-blue-400">---</div>
+                </div>
+            </div>
+        </div>
+        <div class="lg:col-span-7 glass-panel p-8 rounded-3xl min-h-[400px]">
+            <canvas id="chart-exp1"></canvas>
+        </div>
+    </section>
+
+    <section class="max-w-7xl mx-auto mb-24 print-row">
+        <div class="lg:col-span-5 space-y-6">
+            <h2 class="text-2xl font-bold mono text-purple-400">02_WAVELENGTH</h2>
+            <div class="glass-panel p-6 rounded-3xl border-l-4 border-l-purple-500">
+                <table class="w-full text-[11px] mono text-center">
+                    <thead>
+                        <tr class="text-slate-500 border-b border-slate-800">
+                            <th>Vin (V)</th><th>I1 (µA)</th><th>I2 (µA)</th><th>I3 (µA)</th><th class="text-purple-400">AVG (µA)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="body-exp2"></tbody>
+                </table>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div class="glass-panel p-5 rounded-2xl bg-purple-500/5">
+                    <span class="block text-[10px] mono text-slate-500 uppercase">Stopping Potential Vs (V)</span>
+                    <div id="vs-val" class="text-xl font-bold text-purple-300">---</div>
+                </div>
+                <div class="glass-panel p-5 rounded-2xl bg-purple-500/5">
+                    <span class="block text-[10px] mono text-slate-500 uppercase">Wavelength λ (nm)</span>
+                    <div id="lambda-val" class="text-xl font-bold text-purple-400">---</div>
+                </div>
+            </div>
+        </div>
+        <div class="lg:col-span-7 glass-panel p-8 rounded-3xl min-h-[400px]">
+            <canvas id="chart-exp2"></canvas>
+        </div>
+    </section>
+
+    <section class="max-w-7xl mx-auto mb-24 print-row">
+        <div class="lg:col-span-5 space-y-6">
+            <h2 class="text-2xl font-bold mono text-emerald-400">03_PLANCK_CONSTANT</h2>
+            <div class="glass-panel p-6 rounded-3xl border-l-4 border-l-emerald-500">
+                <table class="w-full text-[11px] mono text-center">
+                    <thead>
+                        <tr class="text-slate-500 border-b border-slate-800">
+                            <th>LED Color</th><th>λ (nm)</th><th>Vs (V)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>Red</td><td><input type="number" class="data-input l3-wave" value="650"></td><td><input type="number" step="0.01" class="data-input l3-vs" oninput="runExp3()"></td></tr>
+                        <tr><td>Green</td><td><input type="number" class="data-input l3-wave" value="530"></td><td><input type="number" step="0.01" class="data-input l3-vs" oninput="runExp3()"></td></tr>
+                        <tr><td>Blue</td><td><input type="number" class="data-input l3-wave" value="460"></td><td><input type="number" step="0.01" class="data-input l3-vs" oninput="runExp3()"></td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="glass-panel p-5 rounded-2xl bg-emerald-500/5">
+                <span class="block text-[10px] mono text-slate-500 uppercase">Planck's Constant h (J·s)</span>
+                <div id="h-val" class="text-3xl font-bold text-emerald-400">---</div>
+            </div>
+        </div>
+        <div class="lg:col-span-7 glass-panel p-8 rounded-3xl min-h-[400px]">
+            <canvas id="chart-exp3"></canvas>
+        </div>
+    </section>
+
+    <section class="max-w-7xl mx-auto mb-12">
+        <h2 class="text-2xl font-bold mono text-slate-400 mb-4">04_ANALYSIS_SUMMARY</h2>
+        <div class="glass-panel p-8 rounded-3xl border border-slate-700 bg-slate-900/50">
+            <p id="conclusion-text" class="text-slate-300 leading-relaxed italic mono text-sm">
+                Enter experimental data to generate the final analytical summary...
+            </p>
+        </div>
+    </section>
+
+    <script>
+        const h_ref = 6.63e-34, e_ref = 1.6e-19, c_ref = 3e8;
+        let globalPhi_J = 0, c1, c2, c3;
+
+        window.onload = () => {
+            initCharts();
+            for(let i=0; i<5; i++) { addRow('body-exp1', runExp1); addRow('body-exp2', runExp2); }
+        };
+
+        function addRow(id, cb) {
+            const row = document.createElement('tr');
+            row.className = "border-b border-slate-900";
+            row.innerHTML = `<td><input type="number" class="data-input vin"></td><td><input type="number" class="data-input v1"></td><td><input type="number" class="data-input v2"></td><td><input type="number" class="data-input v3"></td><td class="v-avg font-bold text-blue-400">0.0</td>`;
+            document.getElementById(id).appendChild(row);
+            row.querySelectorAll('input').forEach(i => i.addEventListener('input', cb));
+        }
+
+        function initCharts() {
+            const cfg = (labelX, labelY) => ({
+                responsive: true, maintainAspectRatio: false,
+                scales: { 
+                    x: { title: { display: true, text: labelX, color: '#94a3b8', font: {family:'JetBrains Mono', size: 10} } },
+                    y: { title: { display: true, text: labelY, color: '#94a3b8', font: {family:'JetBrains Mono', size: 10} } }
+                },
+                plugins: { legend: { display: false } }
+            });
+            c1 = new Chart(document.getElementById('chart-exp1'), { type: 'scatter', data: { datasets: [{backgroundColor:'#3b82f6', data:[]}, {type:'line', borderColor:'#ef4444', data:[], pointRadius:0}] }, options: cfg('Frequency (x10¹⁴ Hz)', 'Output Voltage (V)') });
+            c2 = new Chart(document.getElementById('chart-exp2'), { type: 'scatter', data: { datasets: [{backgroundColor:'#a855f7', data:[]}, {type:'line', borderColor:'#ef4444', data:[], pointRadius:0}] }, options: cfg('Input Voltage (V)', 'Photocurrent (µA)') });
+            c3 = new Chart(document.getElementById('chart-exp3'), { type: 'scatter', data: { datasets: [{backgroundColor:'#10b981', data:[]}, {type:'line', borderColor:'#ef4444', data:[], pointRadius:0}] }, options: cfg('Frequency (x10¹⁴ Hz)', 'Stopping Potential (V)') });
+        }
+
+        function linearRegression(pts) {
+            const n = pts.length;
+            let sx=0, sy=0, sxy=0, sxx=0;
+            pts.forEach(p => { sx+=p.x; sy+=p.y; sxy+=p.x*p.y; sxx+=p.x*p.x; });
+            const m = (n*sxy - sx*sy)/(n*sxx - sx*sx);
+            return { m, b: (sy - m*sx)/n };
+        }
+
+        function runExp1() {
+            let pts = [];
+            document.querySelectorAll('#body-exp1 tr').forEach(r => {
+                const vin = parseFloat(r.cells[0].children[0].value);
+                const v_avg = (parseFloat(r.cells[1].children[0].value||0)+parseFloat(r.cells[2].children[0].value||0)+parseFloat(r.cells[3].children[0].value||0))/3000;
+                if(!isNaN(vin) && v_avg > 0) { 
+                    pts.push({ x: (e_ref*vin/h_ref)/1e14, y: v_avg }); 
+                    r.querySelector('.v-avg').innerText = v_avg.toFixed(3); 
+                }
+            });
+            if(pts.length > 1) {
+                const { m, b } = linearRegression(pts);
+                const f0_scaled = -b/m;
+                globalPhi_J = h_ref * (f0_scaled * 1e14);
+                document.getElementById('f0-val').innerText = f0_scaled.toFixed(2);
+                document.getElementById('phi-val').innerText = (globalPhi_J/e_ref).toFixed(2);
+                updateChart(c1, pts, m, b);
+                updateConclusion();
+            }
+        }
+
+        function runExp2() {
+            let pts = [];
+            document.querySelectorAll('#body-exp2 tr').forEach(r => {
+                const vin = parseFloat(r.cells[0].children[0].value);
+                const i_avg = (parseFloat(r.cells[1].children[0].value||0)+parseFloat(r.cells[2].children[0].value||0)+parseFloat(r.cells[3].children[0].value||0))/3;
+                if(!isNaN(vin)) { pts.push({ x: vin, y: i_avg }); r.querySelector('.v-avg').innerText = i_avg.toFixed(2); }
+            });
+            if(pts.length > 1) {
+                const { m, b } = linearRegression(pts);
+                const vs = Math.abs(-b/m);
+                document.getElementById('vs-val').innerText = vs.toFixed(2);
+                if(globalPhi_J > 0) {
+                    const lambda = (h_ref * c_ref) / ((e_ref * vs) + globalPhi_J) * 1e9;
+                    document.getElementById('lambda-val').innerText = Math.round(lambda);
+                }
+                updateChart(c2, pts, m, b);
+                updateConclusion();
+            }
+        }
+
+        function runExp3() {
+            let pts = [];
+            const waves = document.querySelectorAll('.l3-wave'), vss = document.querySelectorAll('.l3-vs');
+            waves.forEach((w, i) => {
+                const freq_scaled = (c_ref / (parseFloat(w.value) * 1e-9)) / 1e14;
+                const vs = parseFloat(vss[i].value);
+                if(!isNaN(vs)) pts.push({ x: freq_scaled, y: vs });
+            });
+            if(pts.length > 1) {
+                const { m, b } = linearRegression(pts);
+                const h_calc = (m * e_ref) / 1e14;
+                document.getElementById('h-val').innerText = h_calc.toExponential(2);
+                updateChart(c3, pts, m, b);
+                updateConclusion();
+            }
+        }
+
+        function updateConclusion() {
+            const phi = document.getElementById('phi-val').innerText;
+            const lambda = document.getElementById('lambda-val').innerText;
+            const hVal = document.getElementById('h-val').innerText;
+            if (phi !== "---" && lambda !== "---") {
+                document.getElementById('conclusion-text').innerHTML = `The photoelectric analysis determined a work function of <strong>${phi} eV</strong>. The unknown LED source corresponds to a wavelength of <strong>${lambda} nm</strong>. ` + (hVal !== "---" ? `Planck's constant was experimentally derived as <strong>${hVal} J·s</strong>.` : "");
+            }
+        }
+
+        function updateChart(c, pts, m, b) {
+            c.data.datasets[0].data = pts;
+            const minX = Math.min(...pts.map(p=>p.x)), maxX = Math.max(...pts.map(p=>p.x));
+            c.data.datasets[1].data = [{x: minX, y: m*minX+b}, {x: maxX, y: m*maxX+b}];
+            c.update();
+        }
+    </script>
+</body>
+</html>
